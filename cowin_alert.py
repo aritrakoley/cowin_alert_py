@@ -82,5 +82,12 @@ def alert_if_available(district_id, start_date):
 
 
 if (__name__ == '__main__'):
-    district_id = get_district_id(get_state_id(STATE), DISTRICT)
-    alert_if_available(district_id, START_DATE)
+    try:
+        district_id = get_district_id(get_state_id(STATE), DISTRICT)
+        alert_if_available(district_id, START_DATE)
+    except Exception as e:
+        print(e)
+        print("********************************")
+        print("*****  RESTART THE SCRIPT  *****")
+        print("********************************")
+        os.system("vlc --loop error.mp3")
