@@ -5,12 +5,14 @@ import datetime
 import os
 
 # USER DEFINED VARIABLES
-# STATE = 'Delhi'
-# DISTRICT = 'New Delhi'
-STATE = 'West Bengal'
-DISTRICT = 'Kolkata'
-MIN_AGE = 18
+STATE = 'Uttar Pradesh'
+DISTRICT = 'Varanasi'
+# STATE = 'West Bengal'
+# DISTRICT = 'Kolkata'
+MIN_AGE = 45
 WEEKS_TO_CHECK = 3
+REPEAT = 1
+OUTPUT_FILE = 'vaccine_centers.json'
 
 # SYSTEM DEFINED VARIABLES
 START_DATE = datetime.date.today()
@@ -18,21 +20,35 @@ END_DATE = START_DATE + datetime.timedelta(days=7)
 START_DATE_STR = START_DATE.strftime("%d-%m-%Y")
 END_DATE_STR = END_DATE.strftime("%d-%m-%Y")
 
+
 def get_state_id(state):
-  url = "https://cdn-api.co-vin.in/api/v2/admin/location/states"
-  res = json.loads(requests.request("GET", url, headers={}, data={}).text)
-  state_id = list(filter(lambda x: x["state_name"].lower() == STATE.lower(), res["states"]))[0]['state_id']
-  return state_id
+    url = "https://cdn-api.co-vin.in/api/v2/admin/location/states"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
+    }
+    res = json.loads(requests.request("GET", url, headers=headers, data={}).text)
+    state_id = list(filter(lambda x: x["state_name"].lower(
+    ) == STATE.lower(), res["states"]))[0]['state_id']
+    return state_id
+
 
 def get_district_id(state_id, district_name):
     url = f"https://cdn-api.co-vin.in/api/v2/admin/location/districts/{state_id}"
-    res = json.loads(requests.request("GET", url, headers={}, data={}).text)
-    district_id = list(filter(lambda x: x["district_name"].lower() == district_name.lower(), res["districts"]))[0]['district_id']
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
+    }
+    res = json.loads(requests.request("GET", url, headers=headers, data={}).text)
+    district_id = list(filter(lambda x: x["district_name"].lower(
+    ) == district_name.lower(), res["districts"]))[0]['district_id']
     return district_id
+
 
 def get_all_centers(district_id, start_date):
     url = f"https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByDistrict?district_id={district_id}&date={start_date}"
-    res = json.loads(requests.request("GET", url, headers={}, data={}).text)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
+    }
+    res = json.loads(requests.request("GET", url, headers=headers, data={}).text)
     return res
 
 
@@ -40,6 +56,7 @@ def filter_sessions(e):
     if(e["available_capacity"] > 0 and e["min_age_limit"] <= MIN_AGE):
         return True
     return False
+
 
 def filter_centers(centers):
     available = []
@@ -67,21 +84,34 @@ def alert_if_available(district_id, start_date):
             centers = get_all_centers(district_id, start_date_str)
             ac = filter_centers(centers["centers"])
 
-            if ( len(ac) > 0):
-                print(f'\t\tVaccine Available in {DISTRICT} between {start_date_str} and {end_date_str}!')
-                with open('vaccine_centers.json', 'w') as f:
+            if (len(ac) > 0):
+                print(
+                    f'\t\tVaccine Available in {DISTRICT} between {start_date_str} and {end_date_str}!')
+                with open(OUTPUT_FILE, 'w') as f:
                     f.write(json.dumps(ac))
-                os.system("vlc --loop alert.mp3")
+                os.system("cvlc --loop alert.mp3")
             else:
-                print(f'\t\tNothing Available Yet for {DISTRICT} between {start_date_str} and {end_date_str}!')
-            
+                print(
+                    f'\t\tNothing Available Yet for {DISTRICT} between {start_date_str} and {end_date_str}!')
+
             sd = ed + datetime.timedelta(days=1)
             ed = sd + datetime.timedelta(days=7)
-            
-        time.sleep(10)
+
+        print('( Press CTRL + C or CTRL + D or CTRL + Z to stop alarm/script )')
+        time.sleep(60 * REPEAT)
 
 
 if (__name__ == '__main__'):
+    print(f'''
+    Searching for Vaccine Availability:
+    State: {STATE}
+    District: {DISTRICT}
+    Minimum Age: {MIN_AGE}
+    Start Date: {START_DATE.strftime("%d-%m-%Y")}
+    Checking next {WEEKS_TO_CHECK} weeks from Start Date
+    Repeating every {REPEAT} minute(s)...
+    ( Press CTRL + C or CTRL + D or CTRL + Z to stop alarm/script )
+    ''')
     try:
         district_id = get_district_id(get_state_id(STATE), DISTRICT)
         alert_if_available(district_id, START_DATE)
@@ -90,4 +120,4 @@ if (__name__ == '__main__'):
         print("********************************")
         print("*****  RESTART THE SCRIPT  *****")
         print("********************************")
-        os.system("vlc --loop error.mp3")
+        os.system("cvlc --loop error.mp3")
