@@ -5,14 +5,15 @@ import datetime
 import os
 
 # USER DEFINED VARIABLES
-STATE = 'Uttar Pradesh'
-DISTRICT = 'Varanasi'
-# STATE = 'West Bengal'
-# DISTRICT = 'Kolkata'
-MIN_AGE = 45
+# STATE = 'Uttar Pradesh'
+# DISTRICT = 'Varanasi'
+STATE = 'West Bengal'
+DISTRICT = 'Kolkata'
+MIN_AGE = 18
 WEEKS_TO_CHECK = 3
-REPEAT = 1
+REPEAT = 1                               # minutes to repeat search after
 OUTPUT_FILE = 'vaccine_centers.json'
+ADDRESS_CONTAINS = [] # address contains at least one of these words
 
 # SYSTEM DEFINED VARIABLES
 START_DATE = datetime.date.today()
@@ -61,6 +62,11 @@ def filter_sessions(e):
 def filter_centers(centers):
     available = []
     for center in centers:
+        # (1) Match Address
+        matches = [ m for m in ADDRESS_CONTAINS if m.lower() in center['address'].lower() ]
+        if (len(ADDRESS_CONTAINS) > 0 and len(matches) == 0): continue
+
+        # (2) Check for available sessions which match filters
         sessions = list(filter(filter_sessions, center['sessions']))
         if (len(sessions) > 0):
             c = {**center}
@@ -106,6 +112,7 @@ if (__name__ == '__main__'):
     Searching for Vaccine Availability:
     State: {STATE}
     District: {DISTRICT}
+    Address Contains: {ADDRESS_CONTAINS}
     Minimum Age: {MIN_AGE}
     Start Date: {START_DATE.strftime("%d-%m-%Y")}
     Checking next {WEEKS_TO_CHECK} weeks from Start Date
