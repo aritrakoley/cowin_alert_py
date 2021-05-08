@@ -1,0 +1,9 @@
+{
+    "state_name": "Uttar Pradesh",
+    "district_name": "Varanasi",
+    "min_age": 18,
+    "weeks_to_check": 3,
+    "repeat_after_mins": 1, 
+    "output_file": "vaccine_available.json",
+    "address_contains": []
+}
